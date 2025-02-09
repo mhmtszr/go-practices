@@ -14,7 +14,8 @@ These practices are based on my personal experiences and opinions. I am always o
   - [Use jsoniter instead of encoding/json](#use-jsoniter-instead-of-encodingjson)
   - [Use sync.Pool to reduce heap allocations](#use-syncpool-to-reduce-heap-allocations)
   - [Prefer strconv over fmt](#prefer-strconv-over-fmt)
-  - [Prefer Specifying Capacity for Slices and Maps](#prefer-specifying-capacity-for-slices-and-maps)
+  - [Prefer specifying capacity for slices and maps](#prefer-specifying-capacity-for-slices-and-maps)
+  - [Do not return a pointer from the function](#do-not-return-a-pointer-from-the-function)
 - [Testing](#testing)
   - [Unit Testing for Usecases](#unit-testing-for-usecases)
   - [Using Mockery for Mock Generation](#using-mockery-for-mock-generation)
@@ -30,6 +31,7 @@ These practices are based on my personal experiences and opinions. I am always o
   - [destel/rill](#destelrill)
   - [go-resty/resty](#go-restyresty)
   - [go-playground/validator](#go-playgroundvalidator)
+- [Pre-Production Checklist](#pre-production-checklist)
 - [Other Resources](#other-resources)
 
 ## Folder Structure
@@ -376,6 +378,43 @@ BenchmarkGood-4   100000000    0.21s
 
 </td></tr>
 </tbody></table>
+
+### Do not return a pointer from the function
+
+Returning a pointer from a function may cause the variable to escape to the heap(depending on the escape analysis result), increasing CPU usage and garbage
+collection pressure. Instead, return the value directly to avoid unnecessary heap allocations.
+
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+func NewPerson(name string) *Person {
+    return &Person{Name: name}
+}
+```
+
+</td><td>
+
+```go
+func NewPerson(name string) Person {
+    return Person{Name: name}
+}
+```
+</td></tr>
+</tbody></table>
+
+By returning the value directly, we can reduce heap allocations and improve performance.
+
+```go
+type Reader interface {
+    Read(p []byte) (n int, err error)
+}
+```
+
+That's why the built-in Go Reader interface's Read function does not return a []byte; instead, it takes the buffer as a
+parameter to avoid heap allocation.
 
 ## Testing
 
